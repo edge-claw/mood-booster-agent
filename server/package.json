@@ -1,0 +1,25 @@
+{
+  "name": "mood-booster-agent",
+  "version": "1.0.0",
+  "description": "ERC-8004 AI Agent that delivers uplifting messages via MCP protocol, with USDC tipping on BSC/Base",
+  "type": "module",
+  "author": {
+    "name": "edge-claw",
+    "email": "shgchai185@gmail.com",
+    "url": "https://github.com/edge-claw"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edge-claw/mood-booster-agent"
+  },
+  "scripts": {
+    "start": "node index.mjs",
+    "dev": "node --watch index.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "express": "^4.21.0",
+    "zod": "^3.24.0"
+  }
+}

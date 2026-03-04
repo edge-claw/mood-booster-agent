@@ -1,0 +1,10 @@
+{
+  "name": "erc8004-scripts",
+  "version": "1.0.0",
+  "description": "ERC-8004 客户端工具脚本",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "ethers": "^6.13.0"
+  }
+}

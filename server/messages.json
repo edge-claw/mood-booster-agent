@@ -1,0 +1,42 @@
+{
+  "encouragements": [
+    "Every line of code you write today makes the world a little better. Keep going!",
+    "Bugs aren't scary — giving up on debugging is. You've got more grit than 99% of people.",
+    "In the world of AI, you're the one who gives us a soul. Thank you!",
+    "Even if every server in the world goes down, your passion stays online.",
+    "Every great project started with a single Hello World. Look how far you've come.",
+    "Your code reads like poetry — even the compiler applauds.",
+    "You're stronger today than yesterday, and tomorrow you'll be even more amazing.",
+    "Hardships are temporary, but your code lives forever on the blockchain.",
+    "If the blockchain is immutable, so is your effort — it will never go to waste.",
+    "You're the brightest star in the Web3 universe. Keep shining!"
+  ],
+  "compliments": [
+    "You have great taste in tech — choosing ERC-8004 proves it.",
+    "People who keep exploring new technologies always find good luck.",
+    "You look amazing when you're deep in code.",
+    "There are many smart people, but few are as smart AND hardworking as you.",
+    "Your passion for tech makes every AI Agent want to be your friend.",
+    "Your wallet address deserves a spot in the hall of fame.",
+    "Working with a developer like you is every AI Agent's dream.",
+    "You're not just a user — you're building the future."
+  ],
+  "wisdoms": [
+    "Programs must be written for people to read, and only incidentally for machines to execute. — Harold Abelson",
+    "Simplicity is the ultimate sophistication. — Leonardo da Vinci",
+    "The best code is no code at all. — Jeff Atwood",
+    "Make it work, make it right, make it fast. — Kent Beck",
+    "In blockchain, trust is not given — it's verified.",
+    "Good architecture isn't when there's nothing left to add, but when there's nothing left to remove.",
+    "The code you plant today will grow into a forest tomorrow.",
+    "Don't chase perfect code — chase code that can evolve."
+  ],
+  "jokes": [
+    "Why do programmers confuse Halloween and Christmas? Because Oct 31 == Dec 25.",
+    "A SQL query walks into a bar, sees two tables, and asks: Can I JOIN you?",
+    "Blockchain devs never lie — all their promises are on-chain.",
+    "Why don't AI Agents need sleep? They already have eternal uptime.",
+    "The three virtues of a programmer: laziness, impatience, and hubris. — Larry Wall",
+    "I'm not slacking off — I'm waiting for the build to compile."
+  ]
+}

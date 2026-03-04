@@ -1,0 +1,27 @@
+{
+  "name": "Mood Booster Agent",
+  "description": "An ERC-8004 registered AI Agent that delivers uplifting messages via MCP protocol. Feel good? Tip 0.001 USDC!",
+  "author": {
+    "name": "edge-claw",
+    "github": "https://github.com/edge-claw",
+    "twitter": "https://x.com/mutou1852",
+    "email": "shgchai185@gmail.com",
+    "wallet": "0x4f5caa4fa9Dd7F92A687582b0e09234bEf49F80a"
+  },
+  "services": [
+    {
+      "type": "mcp",
+      "endpoint": "https://aws.tail177fbd.ts.net/sse",
+      "protocol": "sse"
+    }
+  ],
+  "tip": {
+    "wallet": "0x4f5caa4fa9Dd7F92A687582b0e09234bEf49F80a",
+    "token": "USDC",
+    "amount": "0.001",
+    "chains": {
+      "bsc":  { "chainId": 56,   "contract": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", "decimals": 18 },
+      "base": { "chainId": 8453, "contract": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "decimals": 6  }
+    }
+  }
+}
