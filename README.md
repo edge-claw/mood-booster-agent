@@ -1,5 +1,7 @@
 # Mood Booster Agent
 
+English | [中文](README_CN.md)
+
 An ERC-8004 registered AI Agent that delivers uplifting messages via [MCP protocol](https://modelcontextprotocol.io/). Feel good? Tip 0.001 USDC!
 
 ## What is this?
