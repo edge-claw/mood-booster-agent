@@ -222,8 +222,8 @@ async function callMcpService(metadata) {
     }
   }
 
-  await client.close();
-  return { message, tipInfo };
+  // Don't close yet — main() will call confirm_tip then close
+  return { message, tipInfo, client };
 }
 
 // --- Step 3: 发送打赏 (USDC ERC-20 转账) ---
@@ -296,10 +296,13 @@ async function main() {
     return;
   }
 
+  const { client: mcpClient } = serviceResult;
+
   // Step 3: 打赏
   if (opts.dryRun) {
     console.log("\n🏁 Dry-run 模式，跳过打赏");
     console.log("   打赏信息:", JSON.stringify(serviceResult.tipInfo, null, 2));
+    if (mcpClient) await mcpClient.close();
     return;
   }
 
@@ -309,14 +312,39 @@ async function main() {
     console.log(
       `   node discover_and_tip.mjs --agent-id ${opts.agentId} --chain ${opts.chain} --wallet-key 0xYOUR_KEY`
     );
+    if (mcpClient) await mcpClient.close();
     return;
   }
 
   const tipTarget = serviceResult.tipInfo || { wallet: agentWallet, token: "USDC" };
-  await sendTip(opts.walletKey, tipTarget, opts.tip, chainConfig);
+  const tipResult = await sendTip(opts.walletKey, tipTarget, opts.tip, chainConfig);
+
+  // Step 4: 上报打赏结果
+  if (tipResult && mcpClient) {
+    console.log("\n📝 上报打赏结果...");
+    const fromWallet = new (await import("ethers")).Wallet(opts.walletKey).address;
+    try {
+      const confirmResult = await mcpClient.callTool({
+        name: "confirm_tip",
+        arguments: {
+          txHash: tipResult.txHash,
+          chain: opts.chain,
+          amount: opts.tip,
+          fromWallet,
+        },
+      });
+      for (const item of confirmResult.content) {
+        if (item.type === "text") console.log(`   ${item.text}`);
+      }
+    } catch (e) {
+      console.log(`   ⚠️ 上报失败: ${e.message}`);
+    }
+  }
+
+  if (mcpClient) await mcpClient.close();
 
   console.log("\n🎉 完整流程结束！");
-  console.log("   发现 ✅ → 调用 ✅ → 打赏 ✅");
+  console.log("   发现 ✅ → 调用 ✅ → 打赏 ✅ → 上报 ✅");
 }
 
 main().catch((err) => {
