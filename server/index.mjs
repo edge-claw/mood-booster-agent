@@ -26,8 +26,9 @@ const AGENT_WALLET = process.env.WALLET_ADDRESS || "0x4f5caa4fa9Dd7F92A687582b0e
 const TIP_TOKEN = "USDC";
 const TIP_AMOUNT = "0.001";
 const TIP_CHAINS = {
-  bsc:  { name: "BSC",  chainId: 56,   contract: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", decimals: 18 },
-  base: { name: "Base", chainId: 8453, contract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6  },
+  bsc:      { name: "BSC",      chainId: 56,   contract: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", decimals: 18 },
+  base:     { name: "Base",     chainId: 8453, contract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6  },
+  ethereum: { name: "Ethereum", chainId: 1,    contract: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", decimals: 6  },
 };
 
 // --- Stats ---
@@ -91,7 +92,7 @@ server.tool(
             `  Token: ${TIP_TOKEN}`,
             `  Wallet: ${AGENT_WALLET}`,
             `  Suggested: ${TIP_AMOUNT} ${TIP_TOKEN}`,
-            `  Chains: BSC / Base`,
+            `  Chains: BSC / Base / Ethereum`,
           ].join("\n"),
         },
       ],

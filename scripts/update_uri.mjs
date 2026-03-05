@@ -28,10 +28,10 @@ const REGISTRY_ABI = [
 const CHAINS = {
   bsc:      { rpc: "https://bsc-dataseed.binance.org/",  agentId: 23139 },
   base:     { rpc: "https://mainnet.base.org",            agentId: 24692 },
-  ethereum: { rpc: "https://eth.llamarpc.com",            agentId: 28289 },
+  ethereum: { rpc: "https://ethereum-rpc.publicnode.com",      agentId: 28289 },
   arbitrum: { rpc: "https://arb1.arbitrum.io/rpc",        agentId: 591   },
   optimism: { rpc: "https://mainnet.optimism.io",         agentId: 431   },
-  polygon:  { rpc: "https://polygon-rpc.com",             agentId: 233   },
+  polygon:  { rpc: "https://polygon-bor-rpc.publicnode.com",    agentId: 233   },
 };
 
 // 从 .env 读取私钥

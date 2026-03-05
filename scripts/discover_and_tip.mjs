@@ -37,13 +37,13 @@ const CHAINS = {
     explorer: "https://basescan.org",
   },
   ethereum: {
-    rpc: "https://eth.llamarpc.com",
+    rpc: "https://eth.drpc.org",
     chainId: 1,
     name: "Ethereum",
     explorer: "https://etherscan.io",
   },
   polygon: {
-    rpc: "https://polygon-rpc.com",
+    rpc: "https://polygon-bor-rpc.publicnode.com",
     chainId: 137,
     name: "Polygon",
     explorer: "https://polygonscan.com",
@@ -74,8 +74,9 @@ const REGISTRY_ABI = [
 
 // USDC 合约地址（各链不同）
 const USDC = {
-  bsc:  { contract: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", decimals: 18 },
-  base: { contract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6  },
+  bsc:      { contract: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", decimals: 18 },
+  base:     { contract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6  },
+  ethereum: { contract: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", decimals: 6  },
 };
 
 const ERC20_ABI = [
