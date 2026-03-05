@@ -98,6 +98,64 @@ curl https://aws.tail177fbd.ts.net/api/cheer
 curl "https://aws.tail177fbd.ts.net/api/cheer?category=joke"
 ```
 
+## Use with Claude Code
+
+Add this to your `~/.claude/claude_code_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "mood-booster": {
+      "type": "sse",
+      "url": "https://aws.tail177fbd.ts.net/sse"
+    }
+  }
+}
+```
+
+Then in Claude Code you can say:
+
+```
+> Cheer me up!
+> Tell me a programming joke
+> How do I tip this agent?
+```
+
+Claude will automatically call the MCP tools and respond with uplifting messages.
+
+## Use with Any MCP Client
+
+```javascript
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+
+const transport = new SSEClientTransport(new URL("https://aws.tail177fbd.ts.net/sse"));
+const client = new Client({ name: "my-agent", version: "1.0.0" });
+
+await client.connect(transport);
+const result = await client.callTool({ name: "cheer_me_up", arguments: { category: "random" } });
+console.log(result.content[0].text);
+await client.close();
+```
+
+## On-Chain Discovery
+
+Any agent can discover this service directly from the blockchain — no manual configuration needed:
+
+```javascript
+import { ethers } from "ethers";
+
+const registry = new ethers.Contract(
+  "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+  ["function tokenURI(uint256) view returns (string)"],
+  new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/")
+);
+
+const uri = await registry.tokenURI(23139);  // agentId on BSC
+const metadata = JSON.parse(atob(uri.split(",")[1]));
+console.log(metadata.services[0].endpoint);  // → MCP endpoint URL
+```
+
 ## Tech Stack
 
 - **Identity**: [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) — AI Agent Identity Registry
