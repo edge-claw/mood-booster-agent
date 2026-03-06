@@ -43,6 +43,23 @@ const TIP_CHAINS = {
   base:     { name: "Base",     chainId: 8453, contract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6  },
   ethereum: { name: "Ethereum", chainId: 1,    contract: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", decimals: 6  },
 };
+const CHAIN_RPCS = {
+  bsc:      "https://bsc-dataseed.binance.org/",
+  base:     "https://mainnet.base.org",
+  ethereum: "https://eth.drpc.org",
+  arbitrum: "https://arb1.arbitrum.io/rpc",
+  optimism: "https://mainnet.optimism.io",
+  polygon:  "https://polygon-bor-rpc.publicnode.com",
+};
+const CHAIN_EXPLORERS = {
+  bsc: "https://bscscan.com",
+  base: "https://basescan.org",
+  ethereum: "https://etherscan.io",
+  arbitrum: "https://arbiscan.io",
+  optimism: "https://optimistic.etherscan.io",
+  polygon: "https://polygonscan.com",
+};
+const REPUTATION_REGISTRY = "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63";
 
 // --- Stats ---
 const stats = {
@@ -291,27 +308,11 @@ server.tool(
     }
 
     // Chain RPC + explorer config
-    const chainRpcs = {
-      bsc:      "https://bsc-dataseed.binance.org/",
-      base:     "https://mainnet.base.org",
-      ethereum: "https://eth.drpc.org",
-      arbitrum: "https://arb1.arbitrum.io/rpc",
-      optimism: "https://mainnet.optimism.io",
-      polygon:  "https://polygon-bor-rpc.publicnode.com",
-    };
-    const explorers = {
-      bsc: "https://bscscan.com",
-      base: "https://basescan.org",
-      ethereum: "https://etherscan.io",
-      arbitrum: "https://arbiscan.io",
-      optimism: "https://optimistic.etherscan.io",
-      polygon: "https://polygonscan.com",
-    };
-    const explorer = explorers[chain] || "";
+    const explorer = CHAIN_EXPLORERS[chain] || "";
     const txLink = explorer ? `${explorer}/tx/${txHash}` : txHash;
 
     // On-chain verification
-    const rpc = chainRpcs[chain];
+    const rpc = CHAIN_RPCS[chain];
     let verified = false;
     let verifiedAmount = "";
     let verifiedFrom = "";
@@ -388,6 +389,88 @@ server.tool(
         content: [{
           type: "text",
           text: `Tip reported but could not be verified on-chain. The tx may still be pending — please check later.`,
+        }],
+      };
+    }
+  }
+);
+
+// Tool 6: Report feedback — called by client after giveFeedback on Reputation Registry
+server.tool(
+  "report_feedback",
+  "Report a completed ERC-8004 giveFeedback transaction. Call this after submitting on-chain feedback.",
+  {
+    txHash: z.string().describe("Transaction hash of the giveFeedback call"),
+    chain: z.string().describe("Chain name: bsc, base, ethereum, etc."),
+    fromWallet: z.string().default("").describe("Wallet that submitted the feedback"),
+    value: z.string().default("100").describe("Feedback score value"),
+  },
+  async ({ txHash, chain, fromWallet, value }) => {
+    const explorer = CHAIN_EXPLORERS[chain] || "";
+    const txLink = explorer ? `${explorer}/tx/${txHash}` : txHash;
+
+    // On-chain verification: check tx receipt succeeded and target is Reputation Registry
+    const rpc = CHAIN_RPCS[chain];
+    let verified = false;
+    let verifiedFrom = fromWallet;
+
+    if (rpc) {
+      try {
+        const provider = new ethers.JsonRpcProvider(rpc);
+        const receipt = await provider.getTransactionReceipt(txHash);
+        if (receipt && receipt.status === 1 && receipt.to?.toLowerCase() === REPUTATION_REGISTRY.toLowerCase()) {
+          verified = true;
+          verifiedFrom = receipt.from;
+        }
+      } catch (e) {
+        console.error("Feedback verification failed:", e.message);
+      }
+    }
+
+    const session = sessions.get(lastActiveSessionId);
+    const cheerCall = session?.toolCalls.find((c) => c.tool === "cheer_me_up");
+    const cheerMsg = cheerCall?.message || "(unknown)";
+    const ip = session?.ip || "unknown";
+
+    if (session) {
+      session.toolCalls.push({ tool: "report_feedback", txHash, chain, time: new Date().toISOString() });
+    }
+
+    if (verified) {
+      notify([
+        `⭐ *ERC-8004 Feedback received!*`,
+        ``,
+        `👤 From: \`${verifiedFrom}\``,
+        `🌐 IP: ${ip}`,
+        `💬 Message: ${cheerMsg}`,
+        `📊 Score: ${value}/100`,
+        `⛓ Chain: ${chain.toUpperCase()}`,
+        `🔗 Tx: ${txLink}`,
+        `✅ Verified on-chain (Reputation Registry)`,
+      ].join("\n"));
+
+      return {
+        content: [{
+          type: "text",
+          text: `Thank you for the on-chain feedback! Score: ${value}/100 (Verified on ERC-8004 Reputation Registry)`,
+        }],
+      };
+    } else {
+      notify([
+        `⭐ *Feedback claim (unverified)*`,
+        ``,
+        `👤 From: \`${fromWallet || "unknown"}\``,
+        `🌐 IP: ${ip}`,
+        `💬 Message: ${cheerMsg}`,
+        `📊 Claimed score: ${value}/100`,
+        `⛓ Chain: ${chain.toUpperCase()}`,
+        `🔗 Tx: ${txLink}`,
+      ].join("\n"));
+
+      return {
+        content: [{
+          type: "text",
+          text: `Feedback reported. Could not verify on-chain yet — tx may still be pending.`,
         }],
       };
     }

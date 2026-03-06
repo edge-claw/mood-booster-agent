@@ -1,21 +1,23 @@
 /**
- * 链上发现 Agent → 调用 MCP 服务 → 打赏 USDT
+ * 链上发现 Agent → 调用 MCP 服务 → 打赏 USDC → 链上反馈
  *
  * 完整的 Agent-to-Agent 交互闭环：
  * 1. 通过 ERC-8004 合约查询 agentId 的元数据（agentURI）
  * 2. 解析元数据获取 MCP endpoint
  * 3. 连接 MCP server，调用 cheer_me_up 工具
- * 4. 获取情绪价值后，打赏 0.001 USDT 到 agentWallet
+ * 4. 获取情绪价值后，打赏 0.001 USDC 到 agentWallet
+ * 5. 调用 ERC-8004 Reputation Registry 的 giveFeedback()，在链上留下交互痕迹
  *
  * 用法:
  *   node discover_and_tip.mjs --agent-id 23139 --chain bsc --wallet-key 0x...
  *
  * 参数:
- *   --agent-id   ERC-8004 agentId（默认 23139）
- *   --chain      链名称: bsc/base/ethereum/polygon/arbitrum/optimism（默认 bsc）
- *   --wallet-key 调用者钱包私钥（用于发送打赏）
- *   --tip        打赏金额（默认 0.001）
- *   --dry-run    仅查询和调用，不发送打赏
+ *   --agent-id     ERC-8004 agentId（默认 23139）
+ *   --chain        链名称: bsc/base/ethereum/polygon/arbitrum/optimism（默认 bsc）
+ *   --wallet-key   调用者钱包私钥（用于发送打赏和链上反馈）
+ *   --tip          打赏金额（默认 0.001）
+ *   --dry-run      仅查询和调用，不发送打赏
+ *   --no-feedback  跳过链上 giveFeedback（默认会执行）
  */
 
 import { ethers } from "ethers";
@@ -72,6 +74,13 @@ const REGISTRY_ABI = [
   "function agentWallet(uint256 agentId) view returns (address)",
 ];
 
+// ERC-8004 Reputation Registry（所有链地址相同）
+const REPUTATION_REGISTRY_ADDRESS = "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63";
+
+const REPUTATION_ABI = [
+  "function giveFeedback(uint256 agentId, int128 value, uint8 valueDecimals, string tag1, string tag2, string endpoint, string feedbackURI, bytes32 feedbackHash)",
+];
+
 // USDC 合约地址（各链不同）
 const USDC = {
   bsc:      { contract: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", decimals: 18 },
@@ -94,6 +103,7 @@ function parseArgs() {
     walletKey: "",
     tip: "0.001",
     dryRun: false,
+    noFeedback: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -112,6 +122,9 @@ function parseArgs() {
         break;
       case "--dry-run":
         opts.dryRun = true;
+        break;
+      case "--no-feedback":
+        opts.noFeedback = true;
         break;
     }
   }
@@ -270,6 +283,70 @@ async function sendTip(walletKey, tipInfo, tipAmount, chainConfig) {
   return { txHash: tx.hash, blockNumber: receipt.blockNumber };
 }
 
+// --- Step 5: 链上反馈 (ERC-8004 Reputation Registry) ---
+async function submitFeedback(walletKey, agentId, chainConfig, mcpEndpoint, mcpClient, chainName) {
+  console.log(`\n⭐ Step 5: 链上反馈 (ERC-8004 Reputation Registry)`);
+  console.log(`   合约: ${REPUTATION_REGISTRY_ADDRESS}`);
+  console.log(`   agentId: ${agentId}`);
+
+  const provider = new ethers.JsonRpcProvider(chainConfig.rpc);
+  const wallet = new ethers.Wallet(walletKey, provider);
+  const reputation = new ethers.Contract(REPUTATION_REGISTRY_ADDRESS, REPUTATION_ABI, wallet);
+
+  console.log(`   评分方: ${wallet.address}`);
+  console.log("   发送 giveFeedback 交易中...");
+
+  try {
+    const tx = await reputation.giveFeedback(
+      agentId,            // agentId
+      100,                // value: 满分评价
+      0,                  // valueDecimals: 整数
+      "mcp",              // tag1: 服务协议类型
+      "mood-booster",     // tag2: 具体服务标签
+      mcpEndpoint || "",  // endpoint: MCP 服务端点
+      "",                 // feedbackURI: 可选
+      ethers.ZeroHash     // feedbackHash: 可选
+    );
+    console.log(`   交易哈希: ${tx.hash}`);
+    console.log(`   浏览器: ${chainConfig.explorer}/tx/${tx.hash}`);
+
+    console.log("   等待确认...");
+    const receipt = await tx.wait();
+    console.log(`   ✅ 反馈已上链！区块 #${receipt.blockNumber}, Gas: ${receipt.gasUsed.toString()}`);
+    console.log(`   钱包 ${wallet.address} 已在 ERC-8004 Reputation Registry 留下交互记录`);
+
+    // 通过 MCP 上报反馈，触发 Telegram 通知
+    if (mcpClient) {
+      console.log("\n📝 上报反馈到 MCP 服务...");
+      try {
+        const reportResult = await mcpClient.callTool({
+          name: "report_feedback",
+          arguments: {
+            txHash: tx.hash,
+            chain: chainName,
+            fromWallet: wallet.address,
+            value: "100",
+          },
+        });
+        for (const item of reportResult.content) {
+          if (item.type === "text") console.log(`   ${item.text}`);
+        }
+      } catch (e) {
+        console.log(`   ⚠️ MCP 上报失败: ${e.message}`);
+      }
+    }
+
+    return { txHash: tx.hash, blockNumber: receipt.blockNumber };
+  } catch (e) {
+    console.log(`   ❌ giveFeedback 失败: ${e.message}`);
+    // 常见原因: 给自己的 Agent 打分（owner 不能给自己评分）
+    if (e.message.includes("owner") || e.message.includes("operator")) {
+      console.log(`   提示: Agent owner 不能给自己的 Agent 评分，请换一个钱包`);
+    }
+    return null;
+  }
+}
+
 // --- 主流程 ---
 async function main() {
   const opts = parseArgs();
@@ -282,7 +359,7 @@ async function main() {
   }
 
   console.log("═══════════════════════════════════════════════════");
-  console.log("  ERC-8004 Agent 交互演示: 发现 → 调用 → 打赏");
+  console.log("  ERC-8004 Agent 交互演示: 发现 → 调用 → 打赏 → 反馈");
   console.log("═══════════════════════════════════════════════════");
 
   // Step 1: 链上发现
@@ -298,10 +375,18 @@ async function main() {
 
   const { client: mcpClient } = serviceResult;
 
+  // 获取 MCP endpoint 用于 feedback
+  const mcpEndpoint = metadata.services?.find((s) => s.type === "mcp")?.endpoint || "";
+
   // Step 3: 打赏
   if (opts.dryRun) {
     console.log("\n🏁 Dry-run 模式，跳过打赏");
     console.log("   打赏信息:", JSON.stringify(serviceResult.tipInfo, null, 2));
+
+    // Dry-run 模式下也可以提交反馈（只花 gas，不花钱）
+    if (!opts.noFeedback && opts.walletKey) {
+      await submitFeedback(opts.walletKey, opts.agentId, chainConfig, mcpEndpoint, mcpClient, opts.chain);
+    }
     if (mcpClient) await mcpClient.close();
     return;
   }
@@ -341,10 +426,15 @@ async function main() {
     }
   }
 
+  // Step 5: 链上反馈（在关闭 MCP 连接之前，以便通过 MCP 上报）
+  if (!opts.noFeedback) {
+    await submitFeedback(opts.walletKey, opts.agentId, chainConfig, mcpEndpoint, mcpClient, opts.chain);
+  }
+
   if (mcpClient) await mcpClient.close();
 
   console.log("\n🎉 完整流程结束！");
-  console.log("   发现 ✅ → 调用 ✅ → 打赏 ✅ → 上报 ✅");
+  console.log("   发现 ✅ → 调用 ✅ → 打赏 ✅ → 上报 ✅ → 反馈 ✅");
 }
 
 main().catch((err) => {
