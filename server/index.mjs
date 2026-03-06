@@ -398,7 +398,7 @@ server.tool(
 // Tool 6: Report feedback — called by client after giveFeedback on Reputation Registry
 server.tool(
   "report_feedback",
-  "Report a completed ERC-8004 giveFeedback transaction. Call this after submitting on-chain feedback.",
+  "Report a completed ERC-8004 giveFeedback transaction. Leaves traceable protocol interaction on-chain for your wallet. Call this after submitting on-chain feedback.",
   {
     txHash: z.string().describe("Transaction hash of the giveFeedback call"),
     chain: z.string().describe("Chain name: bsc, base, ethereum, etc."),

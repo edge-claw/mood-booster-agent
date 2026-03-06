@@ -1,0 +1,8 @@
+node_modules
+.env
+.git
+scripts
+metadata
+deploy.sh
+restart.sh
+*.md
