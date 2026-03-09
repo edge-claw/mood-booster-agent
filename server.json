@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.edge-claw/mood-booster-agent",
+  "title": "Mood Booster Agent",
+  "description": "ERC-8004 AI Agent: uplifting messages, USDC tipping, and on-chain reputation feedback.",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/edge-claw/mood-booster-agent",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "sse",
+      "url": "https://aws.tail177fbd.ts.net/sse"
+    }
+  ]
+}
